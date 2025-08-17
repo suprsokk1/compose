@@ -1,0 +1,6 @@
+---
+include:
+  - path:
+      - traefik/compose.yml
+      - traefik/letsencrypt/compose.yml
+...

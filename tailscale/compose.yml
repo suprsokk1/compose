@@ -1,0 +1,31 @@
+---
+networks:
+  tailscale:
+    name: "tailscale"
+
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    hostname: "${FQDN}"
+    container_name: "tailscale"
+    cap_add:
+      - net_admin
+    networks:
+      - tailscale
+    devices:
+      - source: /dev/net/tun
+        target: /dev/net/tun
+        permissions: rwm
+    environment:
+      - "TS_EXTRA_ARGS=--accept-routes"
+      - "TS_STATE_DIR=/var/lib/tailscale"
+      - "TS_USERSPACE=false"
+      - "TS_AUTHKEY=${TS_AUTHKEY:-tskey-client-notAReal-OAuthClientSecret1Atawk}"
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /opt/tailscale/state
+        target: /var/lib/tailscale
+        bind:
+          create_host_path: true
+...

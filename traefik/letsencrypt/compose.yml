@@ -1,0 +1,42 @@
+---
+networks:
+  proxy:
+    name: proxy
+    internal: false
+
+services:
+  traefik:
+    container_name: traefik
+    image: traefik:v3.4
+    command:
+      - --api.dashboard=true
+      - --api.insecure=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=proxy
+      - --log.level=DEBUG
+      - --accesslog=false
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls=true
+      - --certificatesresolvers.${ACME_RESOLVER:-myresolver}.acme.httpchallenge=true
+      - --certificatesresolvers.${ACME_RESOLVER:-myresolver}.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.${ACME_RESOLVER:-myresolver}.acme.storage=/acme.json
+      - --certificatesresolvers.${ACME_RESOLVER:-myresolver}.acme.httpchallenge.entrypoint=web
+    networks:
+      - "proxy"
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "443:443"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/opt/traefik/dynamic:/dynamic:ro"
+      - "/opt/traefik/certs:/certs:ro"
+...
