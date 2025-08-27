@@ -15,12 +15,12 @@ services:
       - --providers.file.directory=/etc/traefik/conf.d/
       - --providers.file.watch=true
       - --entrypoints.tcp.address=:443
-      - --api.dashboard=true
+      # - --api.dashboard=true
       - --api.insecure=true
       - --log.level=DEBUG
       - --accesslog=true
     ports:
-      - "8080:8080"
+      # - "8080:8080"
       - "443:443"
     volumes:
       - ${DOCKER_SOCK}:/var/run/docker.sock
