@@ -1,0 +1,49 @@
+---
+name: static-port-forward
+
+networks:
+  static-port-forward:
+    name: static-port-forward
+
+services:
+  frontend:
+    image: traefik
+    configs:
+      - source: frontend_tcp
+        target: /etc/traefik/conf.d/06frontend_tcp.yml
+    command:
+      - --providers.file.directory=/etc/traefik/conf.d/
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.tcp.address=:443
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --log.level=DEBUG
+      - --accesslog=true
+    ports:
+      - "8090:8080"
+      - "8080:443"
+    volumes:
+      - ${DOCKER_SOCK}:/var/run/docker.sock
+    networks: &net
+      - static-port-forward
+
+configs:
+  frontend_tcp:
+    content: |
+      ---
+      tcp:
+        routers:
+          my-tcp-router:
+            entrypoints:
+              - tcp
+            rule: "HostSNI(`*`)"
+            service: "my-tcp-service"
+
+        services:
+          my-tcp-service:
+            loadBalancer:
+              servers:
+                - address: "${FORWARD_TO}"
+      ...
+...
