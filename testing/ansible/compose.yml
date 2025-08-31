@@ -1,0 +1,27 @@
+---
+name: ansible
+
+networks:
+  frontend:
+    driver: bridge
+
+services:
+  base:
+    container_name: ansible
+    hostname: ansible
+    image: ansible-tester-$OS:$VERSION
+    command:
+      - local.yml
+    build:
+      dockerfile: Containerfile
+    working_dir: /data
+    cgroup: host
+    privileged: true
+    tty: true
+    networks:
+      - frontend
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket:ro
+      - /etc/selinux:/etc/selinux:ro # when hostosfamily is rhel
+...

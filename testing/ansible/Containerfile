@@ -1,0 +1,37 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYVENV_DIR=/opt/ansible
+
+RUN --mount=type=cache,target=/var/cache/apt <<EOF
+    apt update &&
+    apt install --no-install-recommends -qqy python3-pip python3-venv curl git-core iproute2 gawk dnsutils systemd &&
+    python3 -m venv ${PYVENV_DIR} &&
+    ${PYVENV_DIR}/bin/python3 -m pip install ansible
+EOF
+
+COPY requirements.yml /data/
+WORKDIR /data
+RUN <<EOF
+    ${PYVENV_DIR}/bin/ansible-galaxy install --role-file=requirements.yml &&
+    ${PYVENV_DIR}/bin/ansible-galaxy collection install --requirements-file=requirements.yml
+EOF
+
+RUN <<EOF
+    find /lib/systemd/system/sysinit.target.wants/ \
+         \( \( -not -type d \) -not -name systemd-tmpfiles-setup.service \) -delete
+    find /lib/systemd/system/anaconda.target.wants/ \
+         /lib/systemd/system/basic.target.wants/ \
+         /lib/systemd/system/local-fs.target.wants/ \
+         /lib/systemd/system/multi-user.target.wants/ \
+         \( -not -type d \) -delete
+    find /etc/systemd/system \( -not -type d \) -iwholename '/*.wants/*'  -delete
+    find /lib/systemd/system/sockets.target.wants/ \( -not -type d \) -iwholename '*udev*' -delete
+    find /lib/systemd/system/sockets.target.wants/ \( -not -type d \) -iwholename '*initctl*' -delete
+EOF
+
+RUN ln -s /usr/lib/systemd/systemd /usr/sbin/init
+
+VOLUME ["/sys/fs/cgroup", "/tmp", "/run"]
+
+CMD ["/usr/sbin/init"]
